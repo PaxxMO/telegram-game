@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Angry Birds-like Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script src="game.js"></script>
+</body>
+</html>
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+#gameCanvas {
+    width: 100vw;
+    height: 100vh;
+}
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let projectile = {
+    x: 100,
+    y: canvas.height - 100,
+    radius: 10,
+    color: 'red',
+    velocity: { x: 0, y: 0 },
+    launched: false
+};
+
+let targets = [
+    { x: 500, y: canvas.height - 100, width: 50, height: 50, color: 'blue' },
+    { x: 600, y: canvas.height - 150, width: 50, height: 50, color: 'blue' }
+];
+
+const gravity = 0.5;
+let aiming = false;
+let aimStart = { x: 0, y: 0 };
+
+canvas.addEventListener('mousedown', startAiming);
+canvas.addEventListener('mousemove', adjustAim);
+canvas.addEventListener('mouseup', launchProjectile);
+
+function startAiming(e) {
+    if (!projectile.launched) {
+        aiming = true;
+        aimStart.x = e.clientX;
+        aimStart.y = e.clientY;
+    }
+}
+
+function adjustAim(e) {
+    if (aiming) {
+        // Можно добавить отрисовку линии прицеливания
+    }
+}
+
+function launchProjectile(e) {
+    if (aiming) {
+        aiming = false;
+        const dx = e.clientX - aimStart.x;
+        const dy = e.clientY - aimStart.y;
+        projectile.velocity.x = -dx / 10;
+        projectile.velocity.y = -dy / 10;
+        projectile.launched = true;
+    }
+}
+
+function update() {
+    if (projectile.launched) {
+        projectile.x += projectile.velocity.x;
+        projectile.y += projectile.velocity.y;
+        projectile.velocity.y += gravity;
+
+        targets.forEach((target, index) => {
+            if (checkCollision(projectile, target)) {
+                targets.splice(index, 1);
+            }
+        });
+
+        if (projectile.y > canvas.height) {
+            resetProjectile();
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
+    ctx.fillStyle = projectile.color;
+    ctx.fill();
+    targets.forEach(target => {
+        ctx.fillStyle = target.color;
+        ctx.fillRect(target.x, target.y, target.width, target.height);
+    });
+}
+
+function checkCollision(projectile, target) {
+    return projectile.x + projectile.radius > target.x &&
+           projectile.x - projectile.radius < target.x + target.width &&
+           projectile.y + projectile.radius > target.y &&
+           projectile.y - projectile.radius < target.y + target.height;
+}
+
+function resetProjectile() {
+    projectile.x = 100;
+    projectile.y = canvas.height - 100;
+    projectile.velocity.x = 0;
+    projectile.velocity.y = 0;
+    projectile.launched = false;
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
